@@ -55,10 +55,10 @@ def _sha256(path):
     chunk_size = 8192
     with open(path, "rb") as f:
         while True:
-            buffer = f.read(chunk_size)
-            if not buffer:
+            if buffer := f.read(chunk_size):
+                sha256hash.update(buffer)
+            else:
                 break
-            sha256hash.update(buffer)
     return sha256hash.hexdigest()
 
 def _download_with_bar(url, file_path, proxies=DEFAULT_PROXIES):
@@ -96,14 +96,14 @@ def _fetch_remote(remote, dirname=None, use_proxy=False, proxies=DEFAULT_PROXIES
 
     file_path = (remote.filename if dirname is None
                  else join(dirname, remote.filename))
-    proxies = None if not use_proxy else proxies
+    proxies = proxies if use_proxy else None
     file_path = _download_with_bar(remote.url, file_path, proxies)
     checksum = _sha256(file_path)
     if remote.checksum != checksum:
-        raise IOError("{} has an SHA256 checksum ({}) "
-                      "differing from expected ({}), "
-                      "file may be corrupted.".format(file_path, checksum,
-                                                      remote.checksum))
+        raise IOError(
+            f"{file_path} has an SHA256 checksum ({checksum}) differing from expected ({remote.checksum}), file may be corrupted."
+        )
+
     return file_path
 
 

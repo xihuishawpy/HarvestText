@@ -26,7 +26,7 @@ def get_qh_sent_dict():
     """
 
     pwd = os.path.abspath(os.path.dirname(__file__))
-    with open(pwd+"/resources/qh_sent_dict.json","r",encoding="utf-8") as f:
+    with open(f"{pwd}/resources/qh_sent_dict.json", "r", encoding="utf-8") as f:
         qh_sent_dict = json.load(f)
     return qh_sent_dict
 
@@ -40,7 +40,7 @@ def get_baidu_stopwords():
 
     """
     pwd = os.path.abspath(os.path.dirname(__file__))
-    with open(pwd + "/resources/bd_stopwords.json", "r", encoding="utf-8") as f:
+    with open(f"{pwd}/resources/bd_stopwords.json", "r", encoding="utf-8") as f:
         stopwords = json.load(f)
     return set(stopwords)
 
@@ -69,13 +69,13 @@ def get_qh_typed_words(used_types = ['IT', '动物', '医药', '历史人名', '
 
     """
     pwd = os.path.abspath(os.path.dirname(__file__))
-    with open(pwd + "/resources/THUOCL.json", "r", encoding="utf-8") as f:
+    with open(f"{pwd}/resources/THUOCL.json", "r", encoding="utf-8") as f:
         typed_words0 = json.load(f)
-    typed_words = dict()
-    for type0 in typed_words0:
-        if type0 in used_types:
-            typed_words[type0] = set(typed_words0[type0])
-    return typed_words
+    return {
+        type0: set(typed_words0[type0])
+        for type0 in typed_words0
+        if type0 in used_types
+    }
 
 def get_sanguo():
     """
@@ -85,7 +85,7 @@ def get_sanguo():
 
     """
     pwd = os.path.abspath(os.path.dirname(__file__))
-    with open(pwd+"/resources/sanguo_docs.json","r",encoding="utf-8") as f:
+    with open(f"{pwd}/resources/sanguo_docs.json", "r", encoding="utf-8") as f:
         docs = json.load(f)
     return docs
 
@@ -99,7 +99,7 @@ def get_sanguo_entity_dict():
     """
     import json
     pwd = os.path.abspath(os.path.dirname(__file__))
-    with open(pwd+"/resources/sanguo_entity_dict.json","r",encoding="utf-8") as f:
+    with open(f"{pwd}/resources/sanguo_entity_dict.json", "r", encoding="utf-8") as f:
         entity_dict = json.load(f)
     return entity_dict["mention"], entity_dict["type"]
 
@@ -120,7 +120,7 @@ def get_english_senti_lexicon(type="LH"):
     :return: sent_dict = {"pos":[words],"neg":[words]}
     """
     pwd = os.path.abspath(os.path.dirname(__file__))
-    with open(pwd + "/resources/LH_senti_lexicon.json", "r", encoding="utf-8") as f:
+    with open(f"{pwd}/resources/LH_senti_lexicon.json", "r", encoding="utf-8") as f:
         senti_lexicon = json.load(f)
     return senti_lexicon
 

@@ -18,7 +18,7 @@ def new_word_register():
     ht.add_new_entity("落叶球", mention0="落叶球", type0="术语") # 作为特定类型登录
     print(ht.seg("这个落叶球踢得真是666", return_sent=True))
     for word, flag in ht.posseg("这个落叶球踢得真是666"):
-        print("%s:%s" % (word, flag), end=" ")
+        print(f"{word}:{flag}", end=" ")
 
 def entity_segmentation():
     para = "上港的武磊和恒大的郜林，谁是中国最好的前锋？那当然是武磊武球王了，他是射手榜第一，原来是弱点的单刀也有了进步"
@@ -33,7 +33,7 @@ def entity_segmentation():
 
     print("\nPOS tagging with entity types")
     for word, flag in ht.posseg(para):
-        print("%s:%s" % (word, flag), end=" ")
+        print(f"{word}:{flag}", end=" ")
 
     print("\n\nentity_linking")
     for span, entity in ht.entity_linking(para):
@@ -353,8 +353,7 @@ def clean_text():
 
 def extract_only_chinese(file):
     pattern = re.compile(r'[^\u4e00-\u9fa5]')
-    chinese = re.sub(pattern, '', file)
-    return chinese
+    return re.sub(pattern, '', file)
 
 def cut_paragraph():
     print("文本自动分段")

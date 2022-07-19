@@ -59,7 +59,11 @@ class ParsingMixin:
 
         '''对找出的主语或者宾语进行扩展'''
         def complete_e(words, postags, child_dict_list, word_index):
-            if expand == "all" or (expand == "exclude_entity" and "#"+postags[word_index]+"#" not in self.entity_types):
+            if (
+                expand == "all"
+                or expand == "exclude_entity"
+                and f"#{postags[word_index]}#" not in self.entity_types
+            ):
                 child_dict = child_dict_list[word_index]
                 prefix = ''
                 if '定中关系' in child_dict:
@@ -77,6 +81,7 @@ class ParsingMixin:
                 return words[word_index]
             else:            # (expand == "exclude_entity" and "#"+postags[word_index]+"#" in self.entity_types)
                 return words[word_index]
+
 
 
         words, postags = ["" for i in range(len(arcs))], ["" for i in range(len(arcs))]
@@ -100,16 +105,15 @@ class ParsingMixin:
                 # 定语后置，动宾关系
                 relation = arcs[index][-2]
                 head = arcs[index][-1]
-                if relation == '定中关系':
-                    if '动宾关系' in child_dict:
-                        e1 = complete_e(words, postags, child_dict_list, head)
-                        r = words[index]
-                        e2 = complete_e(words, postags, child_dict_list, child_dict['动宾关系'][0])
-                        temp_string = r + e2
-                        if temp_string == e1[:len(temp_string)]:
-                            e1 = e1[len(temp_string):]
-                        if temp_string not in e1:
-                            svos.append([e1, r, e2])
+                if relation == '定中关系' and '动宾关系' in child_dict:
+                    e1 = complete_e(words, postags, child_dict_list, head)
+                    r = words[index]
+                    e2 = complete_e(words, postags, child_dict_list, child_dict['动宾关系'][0])
+                    temp_string = r + e2
+                    if temp_string == e1[:len(temp_string)]:
+                        e1 = e1[len(temp_string):]
+                    if temp_string not in e1:
+                        svos.append([e1, r, e2])
                 # 含有介宾关系的主谓动补关系
                 if '主谓关系' in child_dict and '动补结构' in child_dict:
                     e1 = complete_e(words, postags, child_dict_list, child_dict['主谓关系'][0])
@@ -157,10 +161,8 @@ class ParsingMixin:
 
         if align_boundary:
             paras = [para.strip() for para in text.split("\n") if len(para.strip()) > 0]
-            if num_paras is not None:
-                # assert num_paras <= len(paras), "The new segmented paragraphs must be no less than the original ones"
-                if num_paras >= len(paras):
-                    return paras
+            if num_paras is not None and num_paras >= len(paras):
+                return paras
             original_boundary_ids = []
             sentences = []
             for para in paras:

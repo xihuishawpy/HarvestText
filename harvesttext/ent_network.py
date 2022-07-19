@@ -12,12 +12,18 @@ class EntNetworkMixin:
         G = nx.Graph()
         links = {}
         if len(inv_index) == 0:
-            for i, sent in enumerate(docs):
+            for sent in docs:
                 entities_info = self.entity_linking(sent)
-                if len(used_types) == 0:
-                    entities = set(entity for span, (entity, type0) in entities_info)
-                else:
-                    entities = set(entity for span, (entity, type0) in entities_info if type0[1:-1] in used_types)
+                entities = (
+                    {entity for span, (entity, type0) in entities_info}
+                    if len(used_types) == 0
+                    else {
+                        entity
+                        for span, (entity, type0) in entities_info
+                        if type0[1:-1] in used_types
+                    }
+                )
+
                 for u, v in combinations(entities, 2):
                     pair0 = tuple(sorted((u, v)))
                     if pair0 not in links:
@@ -59,7 +65,12 @@ class EntNetworkMixin:
             other_min_freq = min_freq
         for doc in docs:
             if stopwords:
-                words = set(x for x in self.seg(doc, standard_name=standard_name) if x not in stopwords)
+                words = {
+                    x
+                    for x in self.seg(doc, standard_name=standard_name)
+                    if x not in stopwords
+                }
+
             else:
                 words = self.seg(doc, standard_name=standard_name)
             if word in words:
@@ -70,7 +81,7 @@ class EntNetworkMixin:
                     else:
                         links[pair0] += 1
 
-        used_nodes = set([word])  # 关系对中涉及的词语必须与实体有关（>= min_freq）
+        used_nodes = {word}
         for (u, v) in links:
             w = links[(u, v)]
             if word in (u, v) and w >= min_freq:
@@ -98,12 +109,18 @@ class EntNetworkMixin:
                 if word in entities:
                     related_docs.append(doc)
 
-        for i, sent in enumerate(related_docs):
+        for sent in related_docs:
             entities_info = self.entity_linking(sent)
-            if len(used_types) == 0:
-                entities = set(entity for span, (entity, type0) in entities_info)
-            else:
-                entities = set(entity for span, (entity, type0) in entities_info if type0[1:-1] in used_types)
+            entities = (
+                {entity for span, (entity, type0) in entities_info}
+                if len(used_types) == 0
+                else {
+                    entity
+                    for span, (entity, type0) in entities_info
+                    if type0[1:-1] in used_types
+                }
+            )
+
             for u, v in combinations(entities, 2):
                 pair0 = tuple(sorted((u, v)))
                 if pair0 not in links:
@@ -111,7 +128,7 @@ class EntNetworkMixin:
                 else:
                     links[pair0] += 1
 
-        used_nodes = set([word])  # 关系对中涉及的词语必须与实体有关（>= min_freq）
+        used_nodes = {word}
         for (u, v) in links:
             w = links[(u, v)]
             if word in (u, v) and w >= min_freq:

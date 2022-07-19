@@ -48,9 +48,9 @@ class WordDiscoverMixin:
             min_entropy = np.log(length) / 10
             min_freq = min(0.00005, 20.0 / length)
             min_aggregation = np.sqrt(length) / 15
-            mem_saving = bool(length > 300000) if mem_saving is None else mem_saving
-            # ent_threshold: 确定左右熵的阈值对双侧都要求"both"，或者只要左右平均值达到"avg"
-            # 对于每句话都很极短的情况（如长度<8），经常出现在左右边界的词语可能难以被确定，这时ent_threshold建议设为"avg"
+            mem_saving = length > 300000 if mem_saving is None else mem_saving
+                # ent_threshold: 确定左右熵的阈值对双侧都要求"both"，或者只要左右平均值达到"avg"
+                # 对于每句话都很极短的情况（如长度<8），经常出现在左右边界的词语可能难以被确定，这时ent_threshold建议设为"avg"
         mem_saving = False if mem_saving is None else mem_saving
 
         try:
@@ -65,10 +65,14 @@ class WordDiscoverMixin:
         if len(excluding_types) > 0:
             if "#" in list(excluding_types)[0]:  # 化为无‘#’标签
                 excluding_types = [x[1:-1] for x in excluding_types]
-            ex_mentions = set(x for enty in self.entity_mention_dict
-                           if enty in self.entity_type_dict and
-                           self.entity_type_dict[enty] in excluding_types
-                           for x in self.entity_mention_dict[enty])
+            ex_mentions = {
+                x
+                for enty in self.entity_mention_dict
+                if enty in self.entity_type_dict
+                and self.entity_type_dict[enty] in excluding_types
+                for x in self.entity_mention_dict[enty]
+            }
+
         else:
             ex_mentions = set()
         assert excluding_words == 'baidu_stopwords' or (hasattr(excluding_words, '__iter__') and type(excluding_words) != str)
@@ -164,10 +168,7 @@ class WordDiscoverMixin:
                 possegs.append((x.word, tag0))
         except:
             pass
-        if return_posseg:
-            return entity_type_dict, possegs
-        else:
-            return entity_type_dict
+        return (entity_type_dict, possegs) if return_posseg else entity_type_dict
     def entity_discover(self, text, return_count=False, method="NFL", min_count=5, pinyin_tolerance=0, **kwargs):
         """无监督地从较大量文本中发现实体的类别和多个同义mention。建议对千句以上的文本来挖掘，并且文本的主题比较集中。
             效率：在测试环境下处理一个约10000句的时间大约是20秒。另一个约200000句的语料耗时2分半
@@ -274,7 +275,7 @@ class WordDiscoverMixin:
 
         assert stopwords == 'baidu' or (hasattr(stopwords, '__iter__') and type(stopwords) != str)
         stopwords = get_baidu_stopwords() if stopwords == 'baidu' else set(stopwords)
-        
+
         if method == "jieba_tfidf":
             kwds = jieba.analyse.extract_tags(text, topK=int(2*topK), allowPOS=allowPOS, withWeight=with_score)
             if with_score:
@@ -297,7 +298,7 @@ class WordDiscoverMixin:
                                if pos in allowPOS and len(wd) >= min_word_len] 
                                for x in block_pos]
             kwds = textrank(block_words, topK, with_score, window, weighted)
-        
+
         return kwds
 
             

@@ -47,7 +47,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         # 因为只有"freq"策略能够做，所以目前设定：指定freq策略时就默认检查重叠,否则不检查
         self.linking_strategy = "None"  # 将字面值链接到实体的策略，默认为选取字典序第一个
         self.entity_count = defaultdict(int)  # 用于'freq'策略
-        self.latest_mention = dict()  # 用于'latest'策略
+        self.latest_mention = {}
         pwd = os.path.abspath(os.path.dirname(__file__))
         with open(pwd + "/resources/pinyin_adjlist.json", "r", encoding="utf-8") as f:
             self.pinyin_adjlist = json.load(f)
@@ -69,13 +69,17 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
             
 
     def build_trie(self, new_word, entity, entity_type):
-        type0 = "#%s#" % entity_type
-        if not type0 in self.entity_types:
+        type0 = f"#{entity_type}#"
+        if type0 not in self.entity_types:
             punct_regex = r"[、！？｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏!\"\#$%&\'\(\)\*\+,-\./:;<=>?@\[\\\]\^_`{\|}~]"
-            matched = re.search(punct_regex, entity_type, re.MULTILINE | re.UNICODE)
-            if matched:
+            if matched := re.search(
+                punct_regex, entity_type, re.MULTILINE | re.UNICODE
+            ):
                 punct0 = matched.group()
-                raise Exception("Your type input '{}' includes punctuation '{}', please remove them first".format(entity_type,punct0))
+                raise Exception(
+                    f"Your type input '{entity_type}' includes punctuation '{punct0}', please remove them first"
+                )
+
             self.entity_types.add(type0)
             self.prepared = False
             self.hanlp_prepared = False
@@ -84,10 +88,10 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
 
         trie_node = self.trie_root
         for ch in new_word:
-            if not ch in trie_node:
+            if ch not in trie_node:
                 trie_node[ch] = {}
             trie_node = trie_node[ch]
-        if not 'leaf' in trie_node:
+        if 'leaf' not in trie_node:
             trie_node['leaf'] = {(entity, type0)}
         else:
             for (entity_orig, type_orig) in trie_node['leaf'].copy():
@@ -102,7 +106,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                 trie_node = trie_node[ch]
             else:
                 return
-        if not 'leaf' in trie_node:
+        if 'leaf' not in trie_node:
             return
         else:
             del trie_node['leaf']
@@ -116,13 +120,12 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                     trie_node = trie_node[ch]
                 else:
                     continue
-            if not 'leaf' in trie_node:
+            if 'leaf' not in trie_node:
                 continue
-            else:
-                for (entity0, type0) in trie_node['leaf'].copy():
-                    if entity0 == entity:
-                        trie_node["leaf"].remove((entity0, type0))
-                        break
+            for (entity0, type0) in trie_node['leaf'].copy():
+                if entity0 == entity:
+                    trie_node["leaf"].remove((entity0, type0))
+                    break
 
     def _add_entities(self, type_entity_mention_dict):
         for type0 in type_entity_mention_dict:
@@ -151,12 +154,14 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         if entity_mention_dict is None and entity_type_dict is None:
             return
 
-        if entity_mention_dict is None:         # 用实体名直接作为默认指称
-            entity_mention_dict = dict(
-                (entity0, {entity0}) for entity0 in entity_type_dict)
+        if entity_mention_dict is None:     # 用实体名直接作为默认指称
+            entity_mention_dict = {entity0: {entity0} for entity0 in entity_type_dict}
         else:
-            entity_mention_dict = dict(
-                (entity0, set(mentions0)) for (entity0, mentions0) in entity_mention_dict.items())
+            entity_mention_dict = {
+                entity0: set(mentions0)
+                for (entity0, mentions0) in entity_mention_dict.items()
+            }
+
         if len(self.entity_mention_dict) == 0:
             self.entity_mention_dict = entity_mention_dict
         else:
@@ -192,12 +197,11 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         self._add_entities(type_entity_mention_dict)
 
     def add_typed_words(self, type_word_dict):
-        entity_type_dict = dict()
+        entity_type_dict = {}
         for type0 in type_word_dict:
             for word in type_word_dict[type0]:
                 entity_type_dict[word] = type0
-        entity_mention_dict = dict(
-            (entity0, set([entity0])) for entity0 in entity_type_dict.keys())
+        entity_mention_dict = {entity0: {entity0} for entity0 in entity_type_dict}
         self.entity_type_dict = entity_type_dict
         self.entity_mention_dict = entity_mention_dict
 
@@ -211,10 +215,10 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
     def add_new_words(self, new_words):
         for word in new_words:
             self.build_trie(word, word, "新词")
-            self.entity_mention_dict[word] = set([word])
+            self.entity_mention_dict[word] = {word}
             self.entity_type_dict[word] = "新词"
             if word not in self.type_entity_mention_dict["新词"]:
-                self.type_entity_mention_dict["新词"][word] = set([word])
+                self.type_entity_mention_dict["新词"][word] = {word}
             else:
                 self.type_entity_mention_dict["新词"][word].add(word)
         self.check_prepared()
@@ -235,10 +239,10 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         if entity0 in self.entity_mention_dict:
             self.entity_mention_dict[entity0].add(mention0)
         else:
-            self.entity_mention_dict[entity0] = set([mention0])
+            self.entity_mention_dict[entity0] = {mention0}
         self.build_trie(mention0, entity0, type0)
         if entity0 not in self.type_entity_mention_dict[type0]:
-            self.type_entity_mention_dict[type0][entity0] = set([mention0])
+            self.type_entity_mention_dict[type0][entity0] = {mention0}
         else:
             self.type_entity_mention_dict[type0][entity0].add(mention0)
         self.check_prepared()
@@ -272,7 +276,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                 tag0 = "nt"
             elif "其他专名" in type0:
                 tag0 = "nz"
-            CustomDictionary.insert(type0, "%s 1000" % (tag0))  # 动态增加
+            CustomDictionary.insert(type0, f"{tag0} 1000")
         StandardTokenizer.ANALYZER.enableCustomDictionaryForcing(True)
 
     def deprepare(self):
@@ -301,10 +305,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                 break
             if "leaf" in trie_node:
                 records.append((i + 1, trie_node["leaf"]))
-        if len(records) > 0:
-            return records[-1]
-        else:
-            return -1, set()  # -1表示未找到
+        return records[-1] if records else (-1, set())
 
     def search_word_trie(self, word, tolerance=1):
         """
@@ -356,10 +357,9 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         """
 
         self.linking_strategy = strategy
-        if "latest" in strategy:
-            if lastest_mention:
-                for surface0, entity0 in lastest_mention.items():
-                    self.latest_mention[surface0] = entity0
+        if "latest" in strategy and lastest_mention:
+            for surface0, entity0 in lastest_mention.items():
+                self.latest_mention[surface0] = entity0
         if "freq" in strategy:
             if entity_freq:
                 for entity0, freq0 in entity_freq.items():
@@ -380,23 +380,24 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
             linked_entity_type = list(entity_types)[0]
         else:
             linked_entity_type = None
-            if "latest" in self.linking_strategy:
-                if surface0 in self.latest_mention:
-                    entity0 = self.latest_mention[surface0]
-                    for entity_type0 in entity_types:
-                        if entity0 in entity_type0:
-                            linked_entity_type = entity_type0
-                            break
-            if linked_entity_type is None:
-                if "freq" in self.linking_strategy:
-                    candidate, cnt_cand = None, 0
-                    for i, entity_type0 in enumerate(entity_types):
-                        entity0, cnt0 = entity_type0[0], 0
-                        if entity0 in self.entity_count:
-                            cnt0 = self.entity_count[entity0]
-                        if i == 0 or cnt0 > cnt_cand:
-                            candidate, cnt_cand = entity_type0, cnt0
-                        linked_entity_type = candidate
+            if (
+                "latest" in self.linking_strategy
+                and surface0 in self.latest_mention
+            ):
+                entity0 = self.latest_mention[surface0]
+                for entity_type0 in entity_types:
+                    if entity0 in entity_type0:
+                        linked_entity_type = entity_type0
+                        break
+            if linked_entity_type is None and "freq" in self.linking_strategy:
+                candidate, cnt_cand = None, 0
+                for i, entity_type0 in enumerate(entity_types):
+                    entity0, cnt0 = entity_type0[0], 0
+                    if entity0 in self.entity_count:
+                        cnt0 = self.entity_count[entity0]
+                    if i == 0 or cnt0 > cnt_cand:
+                        candidate, cnt_cand = entity_type0, cnt0
+                    linked_entity_type = candidate
             if linked_entity_type is None:
                 linked_entity_type = list(entity_types)[0]
         self._link_record(surface0, linked_entity_type[0])
@@ -412,7 +413,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         for l in range(len(mention)-1):
             r, entity_types = self.dig_trie(mention, l)
             if r != -1 and r<=len(mention):
-                surface0 = mention[0:r]  # 字面值
+                surface0 = mention[:r]
                 (entity0, type0) = self.choose_from(surface0, entity_types)
                 return entity0, type0
         return None, None
@@ -465,8 +466,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                 if not keep_all:
                     entity_type0 = self.choose_from(surface0, entity_types)
                     if "freq" in self.linking_strategy:  # 处理重叠消歧，目前只有freq策略能够做到
-                        overlap_surface_entity_with_pos = {}  # 获得每个待链接字面值的“唯一”映射
-                        overlap_surface_entity_with_pos[surface0] = ([l, r], entity_type0)
+                        overlap_surface_entity_with_pos = {surface0: ([l, r], entity_type0)}
                         for ll in range(l + 1, r):
                             rr, entity_types_2 = self.dig_trie(sent, ll)
                             if rr != -1 and rr <= len(sent):
@@ -511,13 +511,12 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         entities_info = self._entity_linking(sent, pinyin_tolerance, char_tolerance, keep_all)
         if (not keep_all) and (pinyin_tolerance is not None or char_tolerance is not None):
             self._entity_recheck(sent, entities_info, pinyin_tolerance, char_tolerance)
-        if with_ch_pos:
-            ch_pos = []
-            for word, pos in pseg.cut(sent):
-                ch_pos.extend([pos] * len(word))
-            return entities_info, ch_pos
-        else:
+        if not with_ch_pos:
             return entities_info
+        ch_pos = []
+        for word, pos in pseg.cut(sent):
+            ch_pos.extend([pos] * len(word))
+        return entities_info, ch_pos
 
     def get_linking_mention_candidates(self, sent, pinyin_tolerance=None, char_tolerance=None):
         mention_cands = defaultdict(list)
@@ -575,16 +574,15 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                         word = sent[l:r]
                     flag = entities_info[i][1][1][1:-1]
                     i += 1
-                else:
-                    if stopwords and word in stopwords:
-                        continue
+                elif stopwords and word in stopwords:
+                    continue
                 result.append((word, flag))
             return result
     def seg(self, sent, standard_name=False, stopwords=None, return_sent=False):
         if self.language == "en":
             from nltk.tokenize import word_tokenize
             stopwords = set() if stopwords is None else stopwords
-            words = [x for x in word_tokenize(sent) if not x in stopwords]
+            words = [x for x in word_tokenize(sent) if x not in stopwords]
             return " ".join(words) if return_sent else words
         else:
             self.standard_name = standard_name
@@ -600,14 +598,10 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
                         l, r = entities_info[i][0]  # 或使用原文
                         word = sent[l:r]
                     i += 1
-                else:
-                    if stopwords and word in stopwords:
-                        continue
+                elif stopwords and word in stopwords:
+                    continue
                 result.append(word)
-            if return_sent:
-                return " ".join(result)
-            else:
-                return result
+            return " ".join(result) if return_sent else result
     def save_entity_info(self, save_path='./ht_entities.txt', entity_mention_dict=None, entity_type_dict=None):
         '''保存ht已经登录的实体信息，或者外部提供的相同格式的信息，目前保存的信息包括entity,mention,type.
 
@@ -636,11 +630,13 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
             entity_type_dict = self.entity_type_dict
         else:
             if entity_mention_dict is None:  # 用实体名直接作为默认指称
-                entity_mention_dict = dict(
-                    (entity0, {entity0}) for entity0 in entity_type_dict)
+                entity_mention_dict = {entity0: {entity0} for entity0 in entity_type_dict}
             else:
-                entity_mention_dict = dict(
-                    (entity0, set(mentions0)) for (entity0, mentions0) in entity_mention_dict.items())
+                entity_mention_dict = {
+                    entity0: set(mentions0)
+                    for (entity0, mentions0) in entity_mention_dict.items()
+                }
+
 
             if entity_type_dict is None:
                 entity_type_dict = {entity: "添加词" for entity in entity_mention_dict}
@@ -657,7 +653,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
         for entity, mentions0 in entity_mention_dict.items():
             etype = entity_type_dict[entity]
             enames = [entity] + list(mentions0)
-            out_lines.append(" ".join("%s||%s" % (ename, etype) for ename in enames))
+            out_lines.append(" ".join(f"{ename}||{etype}" for ename in enames))
 
         dir0 = os.path.dirname(save_path)
         if dir0 != "":        # 如果在当前路径，则makedirs会报错
@@ -679,7 +675,7 @@ class HarvestText(EntNetworkMixin, EntRetrieveMixin, ParsingMixin, SentimentMixi
             for line in f:
                 enames = line.strip().split()
                 entity, etype = enames[0].split("||")
-                mentions = set(x.split("||")[0] for x in enames[1:])
+                mentions = {x.split("||")[0] for x in enames[1:]}
                 self.entity_type_dict[entity] = etype
                 self.entity_mention_dict[entity] = mentions
 

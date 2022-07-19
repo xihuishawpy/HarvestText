@@ -17,7 +17,7 @@ class NERPEntityDiscover:
         self.entity_count = entity_count
         self.pinyin_adjlist = pinyin_adjlist
         self.word2id, self.id2word = word2id, id2word
-        self.mentions = set(x[:x.rfind("_")] for x in self.word2id)
+        self.mentions = {x[:x.rfind("_")] for x in self.word2id}
         self.mention_count = {x[:x.rfind("_")]:cnt for x, cnt in self.entity_count.items()}
         partition = {i: i for i, word in enumerate(self.id2word)}
         partition, pattern_entity2mentions = self.postprocessing(partition, pinyin_tolerance, pop_words_cnt)
@@ -69,11 +69,17 @@ class NERPEntityDiscover:
                     if entity2 in self.word2id:
                         eid2 = self.word2id[entity2]
                         partition[eid1] = partition[eid2]
-                    if (pname in ["district", "organization"]) and len(trim_entity) > 1:
-                        if trim_entity in self.mentions or trim_entity in pop_words_cnt:
-                            pattern_entity2mentions[entity_type].add(trim_entity)
-                            if trim_entity not in self.mention_count:
-                                self.mention_count[trim_entity] = pop_words_cnt[trim_entity]
+                    if (
+                        (pname in ["district", "organization"])
+                        and len(trim_entity) > 1
+                        and (
+                            trim_entity in self.mentions
+                            or trim_entity in pop_words_cnt
+                        )
+                    ):
+                        pattern_entity2mentions[entity_type].add(trim_entity)
+                        if trim_entity not in self.mention_count:
+                            self.mention_count[trim_entity] = pop_words_cnt[trim_entity]
 
             # pinyin recheck
             if pinyin_tolerance is not None:
@@ -93,8 +99,8 @@ class NERPEntityDiscover:
         :return: entity_mention_dict, entity_type_dict
         """
         num_entities1 = max(partition.values()) + 1
-        cluster_mentions = [set() for i in range(num_entities1)]
-        cluster_entities = [("entity", 0) for i in range(num_entities1)]
+        cluster_mentions = [set() for _ in range(num_entities1)]
+        cluster_entities = [("entity", 0) for _ in range(num_entities1)]
         for wid, cid in partition.items():
             entity0 = self.id2word[wid]
             mention0 = entity0[:entity0.rfind("_")]
@@ -127,7 +133,7 @@ class NFLEntityDiscoverer(NERPEntityDiscover):
         self.type_entity_dict = type_entity_dict
         self.entity_count = entity_count
         self.pinyin_adjlist = pinyin_adjlist
-        self.mentions = set(x[:x.rfind("_")] for x in self.word2id)
+        self.mentions = {x[:x.rfind("_")] for x in self.word2id}
         self.mention_count = {x[:x.rfind("_")]:cnt for x, cnt in self.entity_count.items()}
         self.emb_mat, self.word2id, self.id2word = self.train_emb(sent_words, word2id, id2word,
                                                                   emb_dim, min_count, ft_iters, use_subword,
@@ -173,7 +179,7 @@ class NFLEntityDiscoverer(NERPEntityDiscover):
         part_offset = 0
         for etype, ners in self.type_entity_dict.items():
             sub_id_mapping = [self.word2id[ner0] for ner0 in ners if ner0 in self.word2id]
-            if len(sub_id_mapping) == 0:
+            if not sub_id_mapping:
                 continue
             emb_mat_sub = self.emb_mat[sub_id_mapping, :]
             cos_sims = cosine_similarity(emb_mat_sub)

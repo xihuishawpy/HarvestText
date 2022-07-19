@@ -27,8 +27,7 @@ class EntRetrieveMixin:
                             if self.entity_type_dict[x] in used_type)
         else:
             entities = self.entity_type_dict.keys()
-        cnt = {enty: len(inv_index[enty]) for enty in entities if enty in inv_index}
-        return cnt
+        return {enty: len(inv_index[enty]) for enty in entities if enty in inv_index}
 
     def search_entity(self, query, docs, inv_index):
         if len(inv_index) == 0:

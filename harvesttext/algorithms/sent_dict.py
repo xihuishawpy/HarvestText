@@ -21,13 +21,18 @@ class SentDict(object):
     def build_sent_dict(self ,docs=[], method="PMI",min_times=5, scale="None", pos_seeds=None,neg_seeds=None):
         self.doc_count = len(docs)
         self.method = method
-        pos_seeds = set(pos_seeds)
-        neg_seeds = set(neg_seeds)
         if self.doc_count > 0:
             if method == "PMI":
                 self.co_occur, self.one_occur = self.get_word_stat(docs)
-                self.words = set(word for word in self.one_occur if self.one_occur[word]>=min_times)
-                if len(pos_seeds) > 0 or len(neg_seeds) > 0:     # 如果有新的输入，就更新种子词，否则默认已有（比如通过set已设定）
+                self.words = {
+                    word
+                    for word in self.one_occur
+                    if self.one_occur[word] >= min_times
+                }
+
+                pos_seeds = set(pos_seeds)
+                neg_seeds = set(neg_seeds)
+                if pos_seeds or neg_seeds:     # 如果有新的输入，就更新种子词，否则默认已有（比如通过set已设定）
                     self.pos_seeds = (pos_seeds & self.words)
                     self.neg_seeds = (neg_seeds & self.words)
                 if len(self.pos_seeds) > 0 or len(self.neg_seeds) > 0:
@@ -37,32 +42,31 @@ class SentDict(object):
             else:
                 raise Exception("不支持的情感分析算法")
     def analyse_sent(self, words, avg):
-        if self.method == "PMI":
-            words = (set(words) & set(self.sent_dict))
-            if avg:
-                return sum(self.sent_dict[word] for word in words) / len(words) if len(words) > 0 else 0
-            else:
-                return [self.sent_dict[word] for word in words]
-        else:
+        if self.method != "PMI":
             raise Exception("不支持的情感分析算法")
+        words = (set(words) & set(self.sent_dict))
+        if avg:
+            return sum(self.sent_dict[word] for word in words) / len(words) if len(words) > 0 else 0
+        else:
+            return [self.sent_dict[word] for word in words]
         
     def get_word_stat(self, docs, co=True):
-        co_occur = dict()               # 由于defaultdict太占内存，还是使用dict
-        one_occur = dict()
+        co_occur = {}
+        one_occur = {}
         for doc in docs:
             for word in doc:
-                if not word in one_occur:
+                if word not in one_occur:
                     one_occur[word] = 1
                 else:
                     one_occur[word] += 1
                 # 考虑自共现，否则如果一个负面词不与其他负面词共存，那么它就无法获得PMI，从而被认为是负面的，这不合情理
-                if not (word,word) in co_occur:
+                if (word, word) not in co_occur:
                     co_occur[(word,word)] = 1
                 else:
                     co_occur[(word,word)] += 1
             if co:
                 for a,b in combinations(doc,2):
-                    if not (a,b) in co_occur:
+                    if (a, b) not in co_occur:
                         co_occur[(a,b)] = 1
                         co_occur[(b,a)] = 1
                     else:
@@ -70,9 +74,9 @@ class SentDict(object):
                         co_occur[(b,a)] += 1
         return co_occur,one_occur
     def PMI(self,w1,w2):
-        if not((w1 in self.one_occur) and (w2 in self.one_occur)):
+        if w1 not in self.one_occur or w2 not in self.one_occur:
             raise Exception()
-        if not (w1,w2) in self.co_occur:
+        if (w1, w2) not in self.co_occur:
             return 0
         c1, c2 = self.one_occur[w1], self.one_occur[w2]
         c3 = self.co_occur[(w1,w2)]

@@ -40,10 +40,10 @@ class NaiveKGQA:
         for i, word in enumerate([x,y,z]):
             if word:
                 quest_placeholders[i] = ""
-                quest_placeholders[i + 3] = "ns1:"+word
+                quest_placeholders[i + 3] = f"ns1:{word}"
             else:
-                quest_placeholders[i] = "?x"+str(i)
-                quest_placeholders[i + 3] = "?x"+str(i)
+                quest_placeholders[i] = f"?x{str(i)}"
+                quest_placeholders[i + 3] = f"?x{str(i)}"
 
         query0 = """
             PREFIX ns1: <%s> 
@@ -57,15 +57,9 @@ class NaiveKGQA:
             query0 += "LIMIT %d" % limit
         return query0
     def get_default_answer(self,x="",y="",z=""):
-        if len(x+y+z) > 0:
-            return x+y+z
-        else:
-            return "你好"
+        return x+y+z if len(x+y+z) > 0 else "你好"
     def get_default_answers(self,entities, answers):
-        if len(answers) > 0:
-            return "、".join("".join(x) for x in answers)
-        else:
-            return "你好"
+        return "、".join("".join(x) for x in answers) if len(answers) > 0 else "你好"
     def build_KG(self, SVOs, ht_SVO):
         namespace0 = Namespace(self.default_namespace)
         g = Graph()
@@ -88,16 +82,17 @@ class NaiveKGQA:
         return entities, SVO_types
     def extract_question_e_types(self,question,pinyin_recheck=False,char_recheck=False):
         entities_info = self.ht_e_type.entity_linking(question,pinyin_recheck,char_recheck)
-        question2 = self.ht_e_type.decoref(question,entities_info)
-        return question2
+        return self.ht_e_type.decoref(question,entities_info)
     def match_template(self,question,templates):
         arr = ((edit_dis(question, template0), template0) for template0 in templates)
         dis, temp = min(arr)
         return temp
     def search_answers(self, search0):
         records = self.KG.query(search0)
-        answers = [[str(x)[len(self.default_namespace):] for x in record0] for record0 in records]
-        return answers
+        return [
+            [str(x)[len(self.default_namespace) :] for x in record0]
+            for record0 in records
+        ]
     def add_template(self, q_type, q_template, answer_function):
         self.q_type2templates[q_type].append(q_template)
         self.q_template2answer[q_template] = answer_function
@@ -109,10 +104,9 @@ class NaiveKGQA:
             templates = self.q_type2templates[SVO_types]
             question2 = self.extract_question_e_types(question,pinyin_recheck,char_recheck)
             template0 = self.match_template(question2, templates)
-            answer0 = self.q_template2answer[template0](entities,answers)
+            return self.q_template2answer[template0](entities,answers)
         else:
-            answer0 = self.get_default_answer()
-        return answer0
+            return self.get_default_answer()
 
 if __name__ == "__main__":
     SVOs = [['这风云变幻八十年', '是', '中国近代半殖民地半封建社会前半段'],
