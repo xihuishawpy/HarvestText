@@ -4,7 +4,7 @@ import sys
 import inspect
 
 def get_current_function_name():
-    return os.path.dirname(os.path.abspath(__file__))+"/"+inspect.stack()[1][3]
+    return f"{os.path.dirname(os.path.abspath(__file__))}/{inspect.stack()[1][3]}"
 import _locale
 _locale._getdefaultlocale = (lambda *args: ['zh_CN', 'utf8'])
 
@@ -12,8 +12,8 @@ from harvesttext import HarvestText
 ht = HarvestText()
 
 def test_new_word_discover():
-    sys.stdout = open(get_current_function_name()+"_current","w")
-    expected = open(get_current_function_name()+"_expected").read()
+    sys.stdout = open(f"{get_current_function_name()}_current", "w")
+    expected = open(f"{get_current_function_name()}_expected").read()
     para = "上港的武磊和恒大的郜林，谁是中国最好的前锋？那当然是武磊武球王了，他是射手榜第一，原来是弱点的单刀也有了进步"
     # 返回关于新词质量的一系列信息，允许手工改进筛选(pd.DataFrame型)
     new_words_info = ht.word_discover(para)
@@ -21,21 +21,29 @@ def test_new_word_discover():
     new_words = new_words_info.index.tolist()
     print(new_words)
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_new_word_register():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     new_words = ["落叶球","666"]
     ht.add_new_words(new_words)        # 作为广义上的"新词"登录
     ht.add_new_entity("落叶球", mention0="落叶球", type0="术语") # 作为特定类型登录
     print(ht.seg("这个落叶球踢得真是666", return_sent=True))
     for word, flag in ht.posseg("这个落叶球踢得真是666"):
-        print("%s:%s" % (word, flag), end=" ")
+        print(f"{word}:{flag}", end=" ")
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_entity_segmentation():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     para = "上港的武磊和恒大的郜林，谁是中国最好的前锋？那当然是武磊武球王了，他是射手榜第一，原来是弱点的单刀也有了进步"
     print("\nadd entity info(mention, type)")
     entity_mention_dict = {'武磊': ['武磊', '武球王'], '郜林': ['郜林', '郜飞机'], '前锋': ['前锋'], '上海上港': ['上港'], '广州恒大': ['恒大'],
@@ -48,7 +56,7 @@ def test_entity_segmentation():
 
     print("\nPOS tagging with entity types")
     for word, flag in ht.posseg(para):
-        print("%s:%s" % (word, flag), end=" ")
+        print(f"{word}:{flag}", end=" ")
 
     print("\n\nentity_linking")
     for span, entity in ht.entity_linking(para):
@@ -58,10 +66,14 @@ def test_entity_segmentation():
     print(ht.cut_sentences(para))
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_sentiment_dict():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     print("\nsentiment dictionary")
     sents = ["武磊威武，中超第一射手！",
           "武磊强，中超最第一本土球员！",
@@ -77,10 +89,14 @@ def test_sentiment_dict():
     print("%f:%s" % (ht.analyse_sent(sent), sent))
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_entity_search():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     print("\nentity search")
     docs = ["武磊威武，中超第一射手！",
             "郜林看来不行，已经到上限了。",
@@ -98,10 +114,14 @@ def test_entity_search():
     print(ht.get_entity_counts(subdocs, inv_index2, used_type=["球员"]))  # 可以限定类型
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_text_summarization():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     # 文本摘要
     print("\nText summarization")
     docs = ["武磊威武，中超第一射手！",
@@ -112,10 +132,14 @@ def test_text_summarization():
         print(doc)
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_entity_network():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     print("\nentity network")
     # 在现有实体库的基础上随时新增，比如从新词发现中得到的漏网之鱼
     ht.add_new_entity("颜骏凌", "颜骏凌", "球员")
@@ -130,7 +154,11 @@ def test_entity_network():
     # assert open(get_current_function_name() + "_current").read() == expected
 
 def test_save_load_clear():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     from harvesttext import loadHT,saveHT
     para = "上港的武磊和恒大的郜林，谁是中国最好的前锋？那当然是武磊武球王了，他是射手榜第一，原来是弱点的单刀也有了进步"
     saveHT(ht,"ht_model1")
@@ -142,10 +170,14 @@ def test_save_load_clear():
     print(ht2.seg(para))
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_load_resources():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     from harvesttext.resources import get_qh_sent_dict,get_baidu_stopwords,get_sanguo,get_sanguo_entity_dict
     sdict = get_qh_sent_dict()              # {"pos":[积极词...],"neg":[消极词...]}
     print("pos_words:",list(sdict["pos"])[10:15])
@@ -166,13 +198,18 @@ def test_load_resources():
     # assert open(get_current_function_name() + "_current").read() == expected
 
 def test_linking_strategy():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     ht0 = HarvestText()
     def test_case(text0,entity_mention_dict,strategy,entity_type_dict=None,**kwargs):
         ht0.add_entities(entity_mention_dict,entity_type_dict)
         ht0.set_linking_strategy(strategy,**kwargs)
         print(ht0.entity_linking(text0))
         ht0.clear()
+
     # latest 例
     test_case('X老师您好。请问老师这题怎么做？',
               entity_mention_dict={"X老师": ["X老师", "老师"], "Y老师": ["Y老师", "老师"]},
@@ -203,11 +240,15 @@ def test_linking_strategy():
               type_freq={"地名": -1})
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 
 def test_find_with_rules():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     from harvesttext.algorithms.match_patterns import UpperFirst, AllEnglish, Contains, StartsWith, EndsWith
     # some more patterns is provided
     text0 = "我喜欢Python，因为requests库很适合爬虫"
@@ -235,7 +276,11 @@ def test_find_with_rules():
     # assert open(get_current_function_name() + "_current").read() == expected
 
 def test_build_word_ego_graph():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     import networkx as nx
     import matplotlib.pyplot as plt
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 步骤一（替换sans-serif字体）
@@ -260,10 +305,14 @@ def test_build_word_ego_graph():
 
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_using_typed_words():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     from harvesttext.resources import get_qh_typed_words,get_baidu_stopwords
     ht0 = HarvestText()
     typed_words, stopwords = get_qh_typed_words(), get_baidu_stopwords()
@@ -276,10 +325,14 @@ def test_using_typed_words():
     print("一些词语被赋予特殊类型IT,而“是”等词语被筛出。")
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 def test_entity_error_check():
-    sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()
+    sys.stdout, expected = (
+        open(f"{get_current_function_name()}_current", "w"),
+        open(f"{get_current_function_name()}_expected").read(),
+    )
+
     ht0 = HarvestText()
     typed_words = {"人名":["武磊"]}
     ht0.add_typed_words(typed_words)
@@ -294,7 +347,7 @@ def test_entity_error_check():
     print(ht0.get_linking_mention_candidates(sent3, pinyin_tolerance=1, char_tolerance=1))
 
     sys.stdout.close()
-    assert open(get_current_function_name() + "_current").read() == expected
+    assert open(f"{get_current_function_name()}_current").read() == expected
 
 # def test_depend_parse():
 #     sys.stdout, expected = open(get_current_function_name()+"_current","w"), open(get_current_function_name()+"_expected").read()

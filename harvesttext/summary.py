@@ -44,18 +44,15 @@ class SummaryMixin:
         except:
             pr = nx.pagerank_numpy(G)
         pr_sorted = sorted(pr.items(), key=lambda x: x[1], reverse=True)
+        ret = []
+        curr_len = 0
         if not avoid_repeat:
-            ret = []
-            curr_len = 0
             for i, imp in pr_sorted[:topK]:
                 curr_len += len(sents[i])
                 if curr_len > maxlen: break
                 ret.append((sents[i], imp) if with_importance else sents[i])
-            return ret
         else:
             assert topK <= len(sent_tokens)
-            ret = []
-            curr_len = 0
             curr_sumy_words = []
             candidate_ids = list(range(len(sent_tokens)))
             i, imp = pr_sorted[0]
@@ -65,7 +62,7 @@ class SummaryMixin:
             ret.append((sents[i], imp) if with_importance else sents[i])
             curr_sumy_words.extend(sent_tokens[i])
             candidate_ids.remove(i)
-            for iter in range(topK-1):
+            for _ in range(topK-1):
                 importance = [pr[i] for i in candidate_ids]
                 norm_importance = scipy.special.softmax(importance)
                 redundancy = np.array([sent_sim_cos(curr_sumy_words, sent_tokens[i]) for i in candidate_ids])
@@ -78,6 +75,7 @@ class SummaryMixin:
                 ret.append((sents[i], imp) if with_importance else sents[i])
                 curr_sumy_words.extend(sent_tokens[i])
                 del candidate_ids[id_in_cands]
-            return ret
+
+        return ret
 
 

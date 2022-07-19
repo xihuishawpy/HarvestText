@@ -12,9 +12,11 @@ def genSubstr(string, n):
     Generate all substrings of max length n for string
     """
     length = len(string)
-    res = [string[i: j] for i in range(0, length)
-        for j in range(i + 1, min(i + n + 1, length + 1))]
-    return res
+    return [
+        string[i:j]
+        for i in range(length)
+        for j in range(i + 1, min(i + n + 1, length + 1))
+    ]
 
 def genSubparts(string):
     """
@@ -23,11 +25,10 @@ def genSubparts(string):
     For string of length 1, return empty list
     """
     length = len(string)
-    res = [(string[0:i], string[i:]) for i in range(1, length)]
-    return res
+    return [(string[:i], string[i:]) for i in range(1, length)]
 
 def entropyOfList(cnt_dict):
-    length = sum(v for v in cnt_dict.values())
+    length = sum(cnt_dict.values())
     return sum(-v/length*math.log(v/length) for v in cnt_dict.values())
 
 def indexOfSortedSuffix(doc, max_word_len):
@@ -37,8 +38,12 @@ def indexOfSortedSuffix(doc, max_word_len):
     """
     indexes = []
     length = len(doc)
-    indexes = ((i,j) for i in range(0, length)
-               for j in range(i + 1, min(i + 1 + max_word_len, length + 1)))
+    indexes = (
+        (i, j)
+        for i in range(length)
+        for j in range(i + 1, min(i + 1 + max_word_len, length + 1))
+    )
+
     return sorted(indexes, key=lambda i_j: doc[i_j[0]:i_j[1]])
 
 
@@ -92,7 +97,7 @@ class WordDiscoverer(object):
         self.min_freq = min_freq
         self.min_entropy = min_entropy
         self.min_aggregation = min_aggregation
-        
+
         if mem_saving:
             self.word_infos = self.genWords(doc)
             # Filter out the results satisfy all the requirements
@@ -117,11 +122,11 @@ class WordDiscoverer(object):
         # Result infomations, i.e., average data of all words
         word_count = float(len(self.word_with_freq))
         if word_count > 0:
-            self.avg_len = sum([len(w.text) for w in self.word_infos])/word_count
-            self.avg_freq = sum([w.freq for w in self.word_infos])/word_count
-            self.avg_left_entropy = sum([w.left for w in self.word_infos])/word_count
-            self.avg_right_entropy = sum([w.right for w in self.word_infos])/word_count
-            self.avg_aggregation = sum([w.aggregation for w in self.word_infos])/word_count
+            self.avg_len = sum(len(w.text) for w in self.word_infos) / word_count
+            self.avg_freq = sum(w.freq for w in self.word_infos) / word_count
+            self.avg_left_entropy = sum(w.left for w in self.word_infos) / word_count
+            self.avg_right_entropy = sum(w.right for w in self.word_infos) / word_count
+            self.avg_aggregation = sum(w.aggregation for w in self.word_infos) / word_count
         else:
             self.avg_len = 0
             self.avg_freq = 0
@@ -147,7 +152,7 @@ class WordDiscoverer(object):
             if word not in word_cands:
                 word_cands[word] = WordInfo(word)
             word_cands[word].update(doc[suf[0] - 1:suf[0]], doc[suf[1]:suf[1] + 1])
-            
+
         # compute probability and entropy
         length = len(doc)
         self.length = length
@@ -178,7 +183,7 @@ class WordDiscoverer(object):
             if word not in word_cands:
                 word_cands[word] = WordInfo(word)
             word_cands[word].freq += 1
-            
+
         self.length = len(doc)
         for k in word_cands:
             word_cands[k].freq /= self.length
@@ -196,7 +201,7 @@ class WordDiscoverer(object):
                 left, right = doc[suf[0] - 1:suf[0]], doc[suf[1]:suf[1] + 1]
                 if left: word_cands[word].left[left] += 1
                 if right: word_cands[word].right[right] += 1
-        
+
         values = word_cands.values()
         for v in values:
             v.left = entropyOfList(v.left)

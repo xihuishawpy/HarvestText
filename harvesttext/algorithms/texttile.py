@@ -42,7 +42,7 @@ class TextTile:
     def cut_paragraphs(self, sent_words, num_paras=None, block_sents=3, std_weight=0.5,
                        align_boundary=True, original_boundary_ids=None):
 
-        sims = [0 for i in range(len(sent_words))]
+        sims = [0 for _ in range(len(sent_words))]
         # for i in range(block_sents, len(sentences)-block_sents):
         for i in range(1, len(sent_words)):
             left_words = [x for words in sent_words[max(0, i-block_sents):i] for x in words]

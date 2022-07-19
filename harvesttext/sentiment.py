@@ -25,7 +25,7 @@ class SentimentMixin:
             sdict = get_qh_sent_dict()
             pos_seeds, neg_seeds = sdict["pos"], sdict["neg"]
         docs = [set(self.seg(sent)) for sent in sents]
-        if not stopwords is None:
+        if stopwords is not None:
             stopwords = set(stopwords)
             for i in range(len(docs)):
                 docs[i] = docs[i] - stopwords

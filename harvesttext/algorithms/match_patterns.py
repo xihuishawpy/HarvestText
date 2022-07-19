@@ -4,16 +4,13 @@ import jieba.posseg
 from harvesttext import HarvestText
 
 def AllEnglish():
-    rule = lambda x: bool(re.fullmatch(r"[a-zA-Z]*",x))
-    return rule
+    return lambda x: bool(re.fullmatch(r"[a-zA-Z]*",x))
 
 def AllEnglishOrNum():
-    rule = lambda x: bool(re.fullmatch(r"[a-zA-Z0-9]*",x))
-    return rule
+    return lambda x: bool(re.fullmatch(r"[a-zA-Z0-9]*",x))
 
 def UpperFirst():
-    rule = lambda x: bool(re.fullmatch(r"[A-Z]",x[0]))
-    return rule
+    return lambda x: bool(re.fullmatch(r"[A-Z]",x[0]))
 
 def StartsWith(prefix):
     return (lambda x: x.startswith(prefix))
@@ -22,8 +19,7 @@ def EndsWith(suffix):
     return (lambda x: x.endswith(suffix))
 
 def Contains(span):
-    rule = lambda x: bool(re.search(span,x))
-    return rule
+    return lambda x: bool(re.search(span,x))
 
 def WithLength(length):
     return (lambda x: len(x) == length)
